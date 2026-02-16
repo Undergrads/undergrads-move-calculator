@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undergrads Move Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚚 Undergrads Move Calculator</h1>
+            <p>Estimate how many movers and hours you'll need for your move</p>
+        </header>
+
+        <form id="moveCalculator">
+            <!-- Residence Type -->
+            <div class="form-group">
+                <label for="residenceType">Residence Type *</label>
+                <select id="residenceType" required>
+                    <option value="">Select...</option>
+                    <option value="studio">Studio</option>
+                    <option value="1bedroom">1 Bedroom</option>
+                    <option value="2bedroom">2 Bedroom</option>
+                    <option value="3bedroom">3 Bedroom</option>
+                    <option value="4bedroom">4+ Bedroom</option>
+                </select>
+            </div>
+
+            <!-- Move Type -->
+            <div class="form-group">
+                <label for="moveType">Type of Move *</label>
+                <select id="moveType" required>
+                    <option value="">Select...</option>
+                    <option value="load">Load Only</option>
+                    <option value="unload">Unload Only</option>
+                    <option value="both">Load & Unload (Full Service)</option>
+                    <option value="inhouse">In-House Move</option>
+                </select>
+            </div>
+
+            <!-- Stairs -->
+            <div class="form-group">
+                <label for="stairs">Stairs/Floors *</label>
+                <select id="stairs" required>
+                    <option value="">Select...</option>
+                    <option value="ground">Ground Floor / Elevator</option>
+                    <option value="1flight">1 Flight of Stairs</option>
+                    <option value="2flights">2 Flights of Stairs</option>
+                    <option value="3flights">3+ Flights of Stairs</option>
+                </select>
+            </div>
+
+            <!-- Drive Distance -->
+            <div class="form-group">
+                <label for="distance">Drive Distance *</label>
+                <select id="distance" required>
+                    <option value="">Select...</option>
+                    <option value="under10">Under 10 miles (local)</option>
+                    <option value="10-40">10-40 miles</option>
+                    <option value="40-75">40-75 miles</option>
+                    <option value="75-100">75-100 miles</option>
+                    <option value="na">N/A (in-house move)</option>
+                </select>
+            </div>
+
+            <!-- Specialty Items -->
+            <div class="form-group">
+                <label>Specialty Items (check all that apply)</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="specialtyItems" value="piano">
+                        Piano
+                    </label>
+                    <label>
+                        <input type="checkbox" name="specialtyItems" value="safe">
+                        Safe (400+ lbs)
+                    </label>
+                    <label>
+                        <input type="checkbox" name="specialtyItems" value="pooltable">
+                        Pool Table
+                    </label>
+                    <label>
+                        <input type="checkbox" name="specialtyItems" value="sectional">
+                        Large Sectional Couch
+                    </label>
+                    <label>
+                        <input type="checkbox" name="specialtyItems" value="exercise">
+                        Treadmill/Exercise Equipment
+                    </label>
+                    <label>
+                        <input type="checkbox" name="specialtyItems" value="other">
+                        Other Heavy Item (400+ lbs)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Packing Services -->
+            <div class="form-group">
+                <label for="packing">Packing Services *</label>
+                <select id="packing" required>
+                    <option value="">Select...</option>
+                    <option value="none">No Packing Needed</option>
+                    <option value="partial">Partial Packing</option>
+                    <option value="full">Full Packing Service</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-calculate">Calculate Estimate</button>
+        </form>
+
+        <!-- Results Section -->
+        <div id="results" class="results hidden">
+            <h2>📦 Your Move Estimate</h2>
+
+            <div class="estimate-cards">
+                <div class="card">
+                    <div class="card-icon">⏰</div>
+                    <div class="card-label">Estimated Time</div>
+                    <div class="card-value" id="estimatedHours">-</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">👥</div>
+                    <div class="card-label">Recommended Movers</div>
+                    <div class="card-value" id="recommendedMovers">-</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-label">Total Labor</div>
+                    <div class="card-value" id="totalPersonHours">-</div>
+                </div>
+            </div>
+
+            <div class="estimate-details">
+                <h3>Based on:</h3>
+                <ul id="estimateFactors"></ul>
+                <p class="disclaimer">
+                    <strong>Note:</strong> This is an estimate. Actual time may vary by ±15-20% depending on specific conditions.
+                    Contact us for a precise quote!
+                </p>
+            </div>
+
+            <button class="btn-reset" onclick="resetCalculator()">Calculate Another Move</button>
+        </div>
+    </div>
+
+    <script src="calculator.js"></script>
+</body>
+</html>
