@@ -1,10 +1,16 @@
 // Undergrads Move Calculator Logic
 
 let advancedMode = false;
+let inventoryState = {}; // Track quantities for each item
 
 document.getElementById('moveCalculator').addEventListener('submit', function(e) {
     e.preventDefault();
     calculateMove();
+});
+
+// Initialize inventory on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeInventory();
 });
 
 function toggleAdvancedMode() {
@@ -157,9 +163,13 @@ function calculateMove() {
 }
 
 function getAdvancedInputs() {
+    const inventory = getInventoryData();
+
     return {
-        furniture: Array.from(document.querySelectorAll('input[name="furniture"]:checked'))
-            .map(cb => ({ item: cb.value, volume: parseInt(cb.dataset.volume) || 0 })),
+        inventory: inventory,
+        furniture: inventory.items, // Comprehensive inventory items
+        totalVolume: inventory.totalVolume,
+        totalItems: inventory.totalCount,
         boxCount: parseInt(document.getElementById('boxCount').value) || 0,
         packingStatus: parseInt(document.getElementById('packingStatus').value) || 100,
         floorNumber: parseInt(document.getElementById('floorNumber').value) || 0,
@@ -173,18 +183,24 @@ function getAdvancedInputs() {
 function calculateAdvancedAdjustments(data) {
     let adjustment = 0;
 
+    // Comprehensive inventory volume adjustment
+    // Industry standard: ~100 cubic feet = 1 hour of labor
+    if (data.totalVolume > 0) {
+        const volumeHours = data.totalVolume / 100;
+        adjustment += volumeHours * 0.5; // More precise than base estimate
+    }
+
     // Box count adjustment (every 10 boxes adds ~15 min)
     if (data.boxCount > 0) {
         adjustment += (data.boxCount / 10) * 0.25;
     }
 
-    // Furniture volume (total cubic feet affects time)
-    const totalVolume = data.furniture.reduce((sum, item) => sum + item.volume, 0);
-    if (totalVolume > 400) {
-        adjustment += 0.5; // Large furniture load
+    // Item count adjustment (many small items take longer)
+    if (data.totalItems > 50) {
+        adjustment += 0.5; // Many items to wrap/move
     }
-    if (totalVolume > 600) {
-        adjustment += 0.5; // Very large load
+    if (data.totalItems > 100) {
+        adjustment += 0.5; // Very many items
     }
 
     // Packing status (not ready = longer time)
@@ -412,7 +428,7 @@ function createCalculationBreakdown(inputs, finalHours) {
 function createTimeRangeVisual(estimatedHours) {
     // Calculate range: -20% to +20%
     const lowEstimate = Math.max(2, Math.round((estimatedHours * 0.8) * 2) / 2);
-    const highEstimate = Math.round((estimatedHours * 1.2) * 2) / 2;
+    const highEstimate = Math.round((estimatedHours * 1.2) * 2) / 2);
 
     // Update markers
     document.getElementById('timeLow').style.left = '10%';
@@ -428,4 +444,156 @@ function createTimeRangeVisual(estimatedHours) {
     setTimeout(() => {
         fillBar.style.width = '100%';
     }, 300);
+}
+
+// ========== INVENTORY SELECTOR FUNCTIONS ==========
+
+function initializeInventory() {
+    const accordion = document.getElementById('inventoryAccordion');
+    if (!accordion || !inventoryData) return;
+
+    accordion.innerHTML = inventoryData.rooms.map(room => {
+        const roomId = room.id;
+        return `
+            <div class="accordion-section" data-room="${roomId}">
+                <div class="accordion-header" onclick="toggleRoom('${roomId}')">
+                    <span class="accordion-icon">▶</span>
+                    <span class="accordion-title">${room.name}</span>
+                    <span class="accordion-count" id="count-${roomId}">0 items</span>
+                </div>
+                <div class="accordion-content" id="content-${roomId}">
+                    ${room.items.map(item => `
+                        <div class="inventory-item">
+                            <div class="item-info">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-details">${item.cubicFeet} cu ft</div>
+                            </div>
+                            <div class="quantity-selector">
+                                <button type="button" class="qty-btn qty-minus" onclick="updateQuantity('${item.id}', -1)">−</button>
+                                <input type="number"
+                                       id="qty-${item.id}"
+                                       class="qty-input"
+                                       value="0"
+                                       min="0"
+                                       max="99"
+                                       onchange="setQuantity('${item.id}', this.value)"
+                                       data-cubic-feet="${item.cubicFeet}">
+                                <button type="button" class="qty-btn qty-plus" onclick="updateQuantity('${item.id}', 1)">+</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Initialize inventory state
+    inventoryData.rooms.forEach(room => {
+        room.items.forEach(item => {
+            inventoryState[item.id] = { quantity: 0, cubicFeet: item.cubicFeet };
+        });
+    });
+}
+
+function toggleRoom(roomId) {
+    const content = document.getElementById(`content-${roomId}`);
+    const icon = content.previousElementSibling.querySelector('.accordion-icon');
+
+    if (content.classList.contains('open')) {
+        content.classList.remove('open');
+        icon.textContent = '▶';
+    } else {
+        content.classList.add('open');
+        icon.textContent = '▼';
+    }
+}
+
+function expandAllRooms() {
+    document.querySelectorAll('.accordion-content').forEach(content => {
+        content.classList.add('open');
+    });
+    document.querySelectorAll('.accordion-icon').forEach(icon => {
+        icon.textContent = '▼';
+    });
+}
+
+function collapseAllRooms() {
+    document.querySelectorAll('.accordion-content').forEach(content => {
+        content.classList.remove('open');
+    });
+    document.querySelectorAll('.accordion-icon').forEach(icon => {
+        icon.textContent = '▶';
+    });
+}
+
+function updateQuantity(itemId, change) {
+    const input = document.getElementById(`qty-${itemId}`);
+    const currentValue = parseInt(input.value) || 0;
+    const newValue = Math.max(0, Math.min(99, currentValue + change));
+
+    input.value = newValue;
+    inventoryState[itemId].quantity = newValue;
+
+    updateInventorySummary();
+    updateRoomCounts();
+}
+
+function setQuantity(itemId, value) {
+    const quantity = Math.max(0, Math.min(99, parseInt(value) || 0));
+    const input = document.getElementById(`qty-${itemId}`);
+
+    input.value = quantity;
+    inventoryState[itemId].quantity = quantity;
+
+    updateInventorySummary();
+    updateRoomCounts();
+}
+
+function updateInventorySummary() {
+    let totalItems = 0;
+    let totalCubicFeet = 0;
+
+    Object.keys(inventoryState).forEach(itemId => {
+        const item = inventoryState[itemId];
+        totalItems += item.quantity;
+        totalCubicFeet += item.quantity * item.cubicFeet;
+    });
+
+    const summaryItems = document.querySelector('.summary-items');
+    const summaryVolume = document.querySelector('.summary-volume');
+
+    if (summaryItems) summaryItems.textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''}`;
+    if (summaryVolume) summaryVolume.textContent = `${totalCubicFeet.toFixed(0)} cu ft`;
+}
+
+function updateRoomCounts() {
+    inventoryData.rooms.forEach(room => {
+        let roomCount = 0;
+
+        room.items.forEach(item => {
+            roomCount += inventoryState[item.id].quantity;
+        });
+
+        const countElement = document.getElementById(`count-${room.id}`);
+        if (countElement) {
+            countElement.textContent = roomCount > 0 ? `${roomCount} item${roomCount !== 1 ? 's' : ''}` : '0 items';
+            countElement.style.color = roomCount > 0 ? '#10b981' : '#94a3b8';
+            countElement.style.fontWeight = roomCount > 0 ? '700' : '600';
+        }
+    });
+}
+
+function getInventoryData() {
+    const items = [];
+    let totalVolume = 0;
+
+    Object.keys(inventoryState).forEach(itemId => {
+        const item = inventoryState[itemId];
+        if (item.quantity > 0) {
+            items.push({ id: itemId, quantity: item.quantity, cubicFeet: item.cubicFeet });
+            totalVolume += item.quantity * item.cubicFeet;
+        }
+    });
+
+    return { items, totalVolume, totalCount: items.reduce((sum, item) => sum + item.quantity, 0) };
 }

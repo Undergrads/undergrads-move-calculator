@@ -141,47 +141,207 @@ header p {
     font-size: 1.05em;
 }
 
-/* Furniture Grid */
-.furniture-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
+/* Inventory Selector */
+.inventory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
-.furniture-item {
+.inventory-header label {
+    margin-bottom: 0;
+}
+
+.inventory-summary {
+    background: #eff6ff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.inventory-description {
+    color: #64748b;
+    font-size: 0.95em;
+    margin-bottom: 16px;
+    font-style: italic;
+}
+
+.inventory-controls {
     display: flex;
-    align-items: center;
-    padding: 12px 14px;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.btn-expand-all,
+.btn-collapse-all {
+    padding: 8px 16px;
     background: white;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #475569;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-weight: 500;
-    color: #475569;
 }
 
-.furniture-item:hover {
+.btn-expand-all:hover,
+.btn-collapse-all:hover {
     border-color: #3b82f6;
+    color: #3b82f6;
     background: #f8fafc;
 }
 
-.furniture-item input[type="checkbox"] {
-    margin-right: 10px;
+/* Accordion */
+.inventory-accordion {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+}
+
+.accordion-section {
+    border-bottom: 1.5px solid #f1f5f9;
+}
+
+.accordion-section:last-child {
+    border-bottom: none;
+}
+
+.accordion-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
     cursor: pointer;
+    background: white;
+    transition: background 0.2s ease;
+}
+
+.accordion-header:hover {
+    background: #f8fafc;
+}
+
+.accordion-icon {
+    color: #3b82f6;
+    font-size: 1.2em;
+    transition: transform 0.2s ease;
+    font-weight: bold;
     width: 20px;
-    height: 20px;
-    accent-color: #3b82f6;
 }
 
-.furniture-item input[type="checkbox"]:checked {
-    accent-color: #10b981;
+.accordion-title {
+    flex: 1;
+    font-weight: 600;
+    color: #334155;
+    font-size: 1.05em;
 }
 
-.furniture-item:has(input:checked) {
-    background: #f0fdf4;
-    border-color: #10b981;
-    color: #166534;
+.accordion-count {
+    color: #94a3b8;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background: #fafbfc;
+}
+
+.accordion-content.open {
+    max-height: 2000px;
+    transition: max-height 0.5s ease-in;
+}
+
+/* Inventory Items */
+.inventory-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.inventory-item:last-child {
+    border-bottom: none;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-name {
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 4px;
+}
+
+.item-details {
+    font-size: 0.85em;
+    color: #94a3b8;
+}
+
+/* Quantity Selector */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qty-btn {
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #475569;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+.qty-btn:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.qty-btn:active {
+    transform: scale(0.95);
+}
+
+.qty-input {
+    width: 50px;
+    height: 32px;
+    text-align: center;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: 600;
+    color: #334155;
+    padding: 0;
+}
+
+.qty-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.qty-input::-webkit-inner-spin-button,
+.qty-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 /* Input fields */
