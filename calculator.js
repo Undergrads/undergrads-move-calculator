@@ -18,42 +18,37 @@ function getBaseHours(residenceType) {
 }
 
 function applyMoveTypeMultiplier(baseHours, moveType) {
+    // Labor-only multipliers (base = loading time)
     const multipliers = {
-        'load': 1.0,
-        'unload': 0.75,
-        'both': 1.75,
-        'inhouse': 0.85
+        'load': 1.0,        // Loading = baseline (tetris packing)
+        'unload': 0.70,     // Unloading is 30% faster (grab & go)
+        'inhouse': 0.80     // In-house moves (similar to unload)
     };
     return baseHours * (multipliers[moveType] || 1.0);
 }
 
-function calculateAdjustments(stairs, distance, specialtyItems, packing) {
+function calculateAdjustments(stairs, carryDistance, specialtyItems) {
     let adjustment = 0;
 
-    // Stairs
+    // Stairs (each flight adds 0.5-1 hour)
     if (stairs === '1flight') adjustment += 0.75;
     if (stairs === '2flights') adjustment += 1.5;
     if (stairs === '3flights') adjustment += 2.5;
 
-    // Drive distance
-    if (distance === '10-40') adjustment += 0.5;
-    if (distance === '40-75') adjustment += 1.5;
-    if (distance === '75-100') adjustment += 2.5;
+    // Long carry distance
+    if (carryDistance === 'moderate') adjustment += 0.5;
+    if (carryDistance === 'long') adjustment += 1.0;
 
-    // Specialty items
+    // Specialty items (each adds ~30 min)
     const itemCount = specialtyItems.length;
     if (itemCount === 1 || itemCount === 2) adjustment += 0.5;
     if (itemCount >= 3) adjustment += 1.0;
 
-    // Packing
-    if (packing === 'partial') adjustment += 1.5;
-    if (packing === 'full') adjustment += 2.5;
-
     return adjustment;
 }
 
-function recommendMovers(residenceType, stairs, specialtyItems, packing) {
-    let movers = 2;
+function recommendMovers(residenceType, stairs, specialtyItems) {
+    let movers = 2; // Minimum for safety
 
     // Base on residence type
     if (residenceType === '2bedroom') movers = 2;
@@ -69,9 +64,6 @@ function recommendMovers(residenceType, stairs, specialtyItems, packing) {
     if (specialtyItems.length >= 2) movers = Math.max(movers, 3);
     if (specialtyItems.length >= 3) movers = Math.max(movers, 4);
 
-    // Increase for packing
-    if (packing === 'full') movers += 1;
-
     return movers;
 }
 
@@ -80,8 +72,7 @@ function calculateMove() {
     const residenceType = document.getElementById('residenceType').value;
     const moveType = document.getElementById('moveType').value;
     const stairs = document.getElementById('stairs').value;
-    const distance = document.getElementById('distance').value;
-    const packing = document.getElementById('packing').value;
+    const carryDistance = document.getElementById('carryDistance').value;
 
     const specialtyItems = Array.from(document.querySelectorAll('input[name="specialtyItems"]:checked'))
         .map(cb => cb.value);
@@ -90,13 +81,16 @@ function calculateMove() {
     let hours = getBaseHours(residenceType);
     hours = applyMoveTypeMultiplier(hours, moveType);
 
-    const adjustments = calculateAdjustments(stairs, distance, specialtyItems, packing);
+    const adjustments = calculateAdjustments(stairs, carryDistance, specialtyItems);
     hours += adjustments;
 
     // Round to nearest 0.5 hour
     hours = Math.round(hours * 2) / 2;
 
-    const movers = recommendMovers(residenceType, stairs, specialtyItems, packing);
+    // Apply 2-hour minimum
+    hours = Math.max(hours, 2);
+
+    const movers = recommendMovers(residenceType, stairs, specialtyItems);
     const totalPersonHours = hours * movers;
 
     // Display results
@@ -104,9 +98,8 @@ function calculateMove() {
         residenceType,
         moveType,
         stairs,
-        distance,
-        specialtyItems,
-        packing
+        carryDistance,
+        specialtyItems
     });
 }
 
@@ -131,9 +124,8 @@ function displayResults(hours, movers, totalPersonHours, inputs) {
 
     // Move type
     const moveTypeLabels = {
-        'load': 'Load only',
-        'unload': 'Unload only',
-        'both': 'Load & Unload (full service)',
+        'load': 'Load only (pack truck)',
+        'unload': 'Unload only (unpack truck)',
         'inhouse': 'In-house move'
     };
     factors.push(moveTypeLabels[inputs.moveType]);
@@ -147,29 +139,17 @@ function displayResults(hours, movers, totalPersonHours, inputs) {
     };
     factors.push(stairsLabels[inputs.stairs]);
 
-    // Distance
-    if (inputs.distance !== 'na') {
-        const distanceLabels = {
-            'under10': 'Under 10 miles',
-            '10-40': '10-40 miles',
-            '40-75': '40-75 miles',
-            '75-100': '75-100 miles'
-        };
-        factors.push(distanceLabels[inputs.distance]);
-    }
+    // Carry distance
+    const carryLabels = {
+        'close': 'Close parking (under 50 feet)',
+        'moderate': 'Moderate distance (50-150 feet)',
+        'long': 'Long carry (150+ feet)'
+    };
+    factors.push(carryLabels[inputs.carryDistance]);
 
     // Specialty items
     if (inputs.specialtyItems.length > 0) {
         factors.push(`${inputs.specialtyItems.length} specialty item(s)`);
-    }
-
-    // Packing
-    if (inputs.packing !== 'none') {
-        const packingLabels = {
-            'partial': 'Partial packing service',
-            'full': 'Full packing service'
-        };
-        factors.push(packingLabels[inputs.packing]);
     }
 
     // Display factors

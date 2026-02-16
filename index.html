@@ -10,7 +10,7 @@
     <div class="container">
         <header>
             <h1>🚚 Undergrads Move Calculator</h1>
-            <p>Estimate how many movers and hours you'll need for your move</p>
+            <p>Labor-only moving help - We load or unload your truck!</p>
         </header>
 
         <form id="moveCalculator">
@@ -29,13 +29,12 @@
 
             <!-- Move Type -->
             <div class="form-group">
-                <label for="moveType">Type of Move *</label>
+                <label for="moveType">Type of Service *</label>
                 <select id="moveType" required>
                     <option value="">Select...</option>
-                    <option value="load">Load Only</option>
-                    <option value="unload">Unload Only</option>
-                    <option value="both">Load & Unload (Full Service)</option>
-                    <option value="inhouse">In-House Move</option>
+                    <option value="load">Load Only (pack your truck)</option>
+                    <option value="unload">Unload Only (unpack your truck)</option>
+                    <option value="inhouse">In-House Move (same location)</option>
                 </select>
             </div>
 
@@ -51,16 +50,14 @@
                 </select>
             </div>
 
-            <!-- Drive Distance -->
+            <!-- Carry Distance -->
             <div class="form-group">
-                <label for="distance">Drive Distance *</label>
-                <select id="distance" required>
+                <label for="carryDistance">Parking to Door Distance *</label>
+                <select id="carryDistance" required>
                     <option value="">Select...</option>
-                    <option value="under10">Under 10 miles (local)</option>
-                    <option value="10-40">10-40 miles</option>
-                    <option value="40-75">40-75 miles</option>
-                    <option value="75-100">75-100 miles</option>
-                    <option value="na">N/A (in-house move)</option>
+                    <option value="close">Close (under 50 feet)</option>
+                    <option value="moderate">Moderate (50-150 feet)</option>
+                    <option value="long">Long (150+ feet)</option>
                 </select>
             </div>
 
@@ -95,16 +92,6 @@
                 </div>
             </div>
 
-            <!-- Packing Services -->
-            <div class="form-group">
-                <label for="packing">Packing Services *</label>
-                <select id="packing" required>
-                    <option value="">Select...</option>
-                    <option value="none">No Packing Needed</option>
-                    <option value="partial">Partial Packing</option>
-                    <option value="full">Full Packing Service</option>
-                </select>
-            </div>
 
             <button type="submit" class="btn-calculate">Calculate Estimate</button>
         </form>
