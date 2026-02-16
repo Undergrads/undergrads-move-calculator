@@ -1,9 +1,32 @@
 // Undergrads Move Calculator Logic
 
+let advancedMode = false;
+
 document.getElementById('moveCalculator').addEventListener('submit', function(e) {
     e.preventDefault();
     calculateMove();
 });
+
+function toggleAdvancedMode() {
+    advancedMode = !advancedMode;
+    const advancedFields = document.getElementById('advancedFields');
+    const toggleButton = document.getElementById('modeToggle');
+    const modeText = toggleButton.querySelector('.mode-text');
+
+    if (advancedMode) {
+        advancedFields.classList.remove('hidden');
+        modeText.textContent = 'Switch to Simple Estimate';
+        toggleButton.classList.add('active');
+        // Scroll to advanced fields
+        setTimeout(() => {
+            advancedFields.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+    } else {
+        advancedFields.classList.add('hidden');
+        modeText.textContent = 'Switch to Advanced Estimate';
+        toggleButton.classList.remove('active');
+    }
+}
 
 function getBaseHours(residenceType) {
     // Base hours for LOAD ONLY (from industry research)
@@ -89,12 +112,20 @@ function calculateMove() {
     const specialtyItems = Array.from(document.querySelectorAll('input[name="specialtyItems"]:checked'))
         .map(cb => cb.value);
 
+    // Get advanced mode values if enabled
+    const advancedData = advancedMode ? getAdvancedInputs() : null;
+
     // Calculate
     let hours = getBaseHours(residenceType);
     hours = applyMoveTypeMultiplier(hours, moveType);
 
     const adjustments = calculateAdjustments(stairs, carryDistance, specialtyItems);
     hours += adjustments;
+
+    // Apply advanced mode adjustments
+    if (advancedMode && advancedData) {
+        hours += calculateAdvancedAdjustments(advancedData);
+    }
 
     // Round to nearest 0.5 hour
     hours = Math.round(hours * 2) / 2;
@@ -119,8 +150,69 @@ function calculateMove() {
         moveType,
         stairs,
         carryDistance,
-        specialtyItems
+        specialtyItems,
+        advancedMode,
+        advancedData
     });
+}
+
+function getAdvancedInputs() {
+    return {
+        furniture: Array.from(document.querySelectorAll('input[name="furniture"]:checked'))
+            .map(cb => ({ item: cb.value, volume: parseInt(cb.dataset.volume) || 0 })),
+        boxCount: parseInt(document.getElementById('boxCount').value) || 0,
+        packingStatus: parseInt(document.getElementById('packingStatus').value) || 100,
+        floorNumber: parseInt(document.getElementById('floorNumber').value) || 0,
+        elevatorStatus: document.getElementById('elevatorStatus').value,
+        accessChallenges: Array.from(document.querySelectorAll('input[name="accessChallenge"]:checked'))
+            .map(cb => cb.value),
+        disassembly: document.getElementById('disassembly').value
+    };
+}
+
+function calculateAdvancedAdjustments(data) {
+    let adjustment = 0;
+
+    // Box count adjustment (every 10 boxes adds ~15 min)
+    if (data.boxCount > 0) {
+        adjustment += (data.boxCount / 10) * 0.25;
+    }
+
+    // Furniture volume (total cubic feet affects time)
+    const totalVolume = data.furniture.reduce((sum, item) => sum + item.volume, 0);
+    if (totalVolume > 400) {
+        adjustment += 0.5; // Large furniture load
+    }
+    if (totalVolume > 600) {
+        adjustment += 0.5; // Very large load
+    }
+
+    // Packing status (not ready = longer time)
+    if (data.packingStatus < 100) {
+        const unpacked = 100 - data.packingStatus;
+        adjustment += (unpacked / 100) * 1.5; // Up to 1.5 hours if nothing packed
+    }
+
+    // Specific floor number (more precise than flights)
+    if (data.floorNumber > 0) {
+        // Each floor adds ~20 minutes on average
+        adjustment += (data.floorNumber - 1) * 0.33;
+    }
+
+    // Elevator reliability
+    if (data.elevatorStatus === 'slow') adjustment += 0.5;
+    if (data.elevatorStatus === 'passenger') adjustment += 0.25;
+    if (data.elevatorStatus === 'none') adjustment += 1.0;
+
+    // Access challenges (each adds time)
+    adjustment += data.accessChallenges.length * 0.25;
+
+    // Disassembly
+    if (data.disassembly === 'minimal') adjustment += 0.5;
+    if (data.disassembly === 'moderate') adjustment += 1.0;
+    if (data.disassembly === 'extensive') adjustment += 1.5;
+
+    return adjustment;
 }
 
 function displayResults(hours, movers, totalPersonHours, inputs) {
@@ -275,6 +367,24 @@ function createCalculationBreakdown(inputs, finalHours) {
             value: `+${adjustmentTotal.toFixed(1)} hours`,
             explanation: adjustmentDetails.join(', ')
         });
+    }
+
+    // Advanced mode adjustments
+    if (inputs.advancedMode && inputs.advancedData) {
+        const advAdj = calculateAdvancedAdjustments(inputs.advancedData);
+        if (advAdj > 0) {
+            const advDetails = [];
+            if (inputs.advancedData.boxCount > 0) advDetails.push(`${inputs.advancedData.boxCount} boxes`);
+            if (inputs.advancedData.furniture.length > 0) advDetails.push(`${inputs.advancedData.furniture.length} furniture items`);
+            if (inputs.advancedData.packingStatus < 100) advDetails.push(`${inputs.advancedData.packingStatus}% packed`);
+            if (inputs.advancedData.disassembly && inputs.advancedData.disassembly !== 'none') advDetails.push('disassembly needed');
+
+            steps.push({
+                label: '🎯 Advanced details refinement',
+                value: `+${advAdj.toFixed(1)} hours`,
+                explanation: advDetails.join(', ')
+            });
+        }
     }
 
     // Final step

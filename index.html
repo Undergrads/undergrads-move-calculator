@@ -14,6 +14,15 @@
         </header>
 
         <form id="moveCalculator">
+            <!-- Mode Toggle -->
+            <div class="mode-toggle-container">
+                <button type="button" class="mode-toggle" id="modeToggle" onclick="toggleAdvancedMode()">
+                    <span class="mode-icon">⚙️</span>
+                    <span class="mode-text">Switch to Advanced Estimate</span>
+                    <span class="mode-badge">More Accurate</span>
+                </button>
+            </div>
+
             <!-- Residence Type -->
             <div class="form-group">
                 <label for="residenceType">Residence Type *</label>
@@ -93,6 +102,147 @@
                 </div>
             </div>
 
+
+            <!-- Advanced Mode Fields -->
+            <div id="advancedFields" class="advanced-fields hidden">
+                <div class="advanced-header">
+                    <h3>📋 Advanced Details</h3>
+                    <p>Provide more specifics for an ultra-precise estimate</p>
+                </div>
+
+                <!-- Detailed Inventory -->
+                <div class="form-group">
+                    <label>Furniture Inventory (check all that apply)</label>
+                    <div class="furniture-grid">
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="bed-queen" data-volume="80">
+                            <span>Queen/King Bed</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="bed-twin" data-volume="50">
+                            <span>Twin Bed</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="couch-large" data-volume="120">
+                            <span>Large Couch/Sectional</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="couch-small" data-volume="70">
+                            <span>Loveseat/Small Couch</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="dresser" data-volume="60">
+                            <span>Dresser/Armoire</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="dining-table" data-volume="80">
+                            <span>Dining Table + Chairs</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="desk" data-volume="40">
+                            <span>Desk</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="bookshelf" data-volume="50">
+                            <span>Bookshelf</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="tv-stand" data-volume="30">
+                            <span>TV Stand</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="nightstand" data-volume="15">
+                            <span>Nightstand</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="coffee-table" data-volume="25">
+                            <span>Coffee Table</span>
+                        </label>
+                        <label class="furniture-item">
+                            <input type="checkbox" name="furniture" value="washer-dryer" data-volume="100">
+                            <span>Washer/Dryer</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Box Count -->
+                <div class="form-group">
+                    <label for="boxCount">Approximate Number of Boxes</label>
+                    <input type="number" id="boxCount" min="0" max="200" step="5" placeholder="e.g., 40">
+                    <small class="field-hint">Typical: Studio 20-30, 1BR 30-50, 2BR 50-80, 3BR 80-120</small>
+                </div>
+
+                <!-- Packing Status -->
+                <div class="form-group">
+                    <label for="packingStatus">Packing Progress</label>
+                    <select id="packingStatus">
+                        <option value="">Select...</option>
+                        <option value="100">100% Packed and ready</option>
+                        <option value="75">75% Packed</option>
+                        <option value="50">50% Packed</option>
+                        <option value="25">25% Packed</option>
+                        <option value="0">Not started (need to pack on move day)</option>
+                    </select>
+                </div>
+
+                <!-- Floor Number -->
+                <div class="form-group">
+                    <label for="floorNumber">Specific Floor Number</label>
+                    <input type="number" id="floorNumber" min="1" max="30" placeholder="e.g., 3">
+                    <small class="field-hint">More precise than just counting flights</small>
+                </div>
+
+                <!-- Elevator Reliability -->
+                <div class="form-group">
+                    <label for="elevatorStatus">Elevator Situation</label>
+                    <select id="elevatorStatus">
+                        <option value="">Select...</option>
+                        <option value="reliable">Reliable freight elevator</option>
+                        <option value="passenger">Passenger elevator only</option>
+                        <option value="slow">Slow or often busy</option>
+                        <option value="none">No elevator (stairs only)</option>
+                    </select>
+                </div>
+
+                <!-- Access Challenges -->
+                <div class="form-group">
+                    <label>Access Challenges (check all that apply)</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" name="accessChallenge" value="narrow-door">
+                            Narrow doorways (under 32")
+                        </label>
+                        <label>
+                            <input type="checkbox" name="accessChallenge" value="tight-turns">
+                            Tight corners/hallways
+                        </label>
+                        <label>
+                            <input type="checkbox" name="accessChallenge" value="steep-stairs">
+                            Steep or narrow stairs
+                        </label>
+                        <label>
+                            <input type="checkbox" name="accessChallenge" value="restricted-hours">
+                            Building time restrictions
+                        </label>
+                        <label>
+                            <input type="checkbox" name="accessChallenge" value="no-parking">
+                            Limited parking/loading zone
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Disassembly Needed -->
+                <div class="form-group">
+                    <label for="disassembly">Furniture Disassembly Needed</label>
+                    <select id="disassembly">
+                        <option value="">Select...</option>
+                        <option value="none">Nothing to disassemble</option>
+                        <option value="minimal">1-2 items (bed frame, table)</option>
+                        <option value="moderate">3-5 items</option>
+                        <option value="extensive">6+ items or complex furniture</option>
+                    </select>
+                </div>
+            </div>
 
             <button type="submit" class="btn-calculate">Calculate Estimate</button>
         </form>
