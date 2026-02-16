@@ -48,22 +48,33 @@ function calculateAdjustments(stairs, carryDistance, specialtyItems) {
     return adjustment;
 }
 
-function recommendMovers(residenceType, stairs, specialtyItems) {
-    let movers = 2; // Minimum for safety
+function recommendMovers(residenceType, stairs, specialtyItems, estimatedHours) {
+    let movers = 2; // Start with minimum
 
-    // Base on residence type
-    if (residenceType === '2bedroom') movers = 2;
-    if (residenceType === '3bedroom') movers = 3;
+    // Business strategy: Prefer 4 movers for speed and reliability
+    // Target: Keep jobs under 4-5 hours maximum
+
+    // Base on residence type - default to 4 movers for most jobs
+    if (residenceType === 'studio') movers = 2;
+    if (residenceType === '1bedroom') movers = 3; // Small jobs: 3 movers
+    if (residenceType === '2bedroom') movers = 4; // Medium jobs: 4 movers (de-risk!)
+    if (residenceType === '3bedroom') movers = 4;
     if (residenceType === '4bedroom') movers = 4;
 
-    // Increase for stairs
+    // Increase for complex factors
     if (stairs === '2flights' || stairs === '3flights') {
-        movers = Math.max(movers, 3);
+        movers = Math.max(movers, 4); // Always 4+ for multiple flights
     }
 
-    // Increase for specialty items
-    if (specialtyItems.length >= 2) movers = Math.max(movers, 3);
-    if (specialtyItems.length >= 3) movers = Math.max(movers, 4);
+    if (specialtyItems.length >= 2) movers = Math.max(movers, 4);
+
+    // Time-based optimization: If job would exceed 5 hours, add more movers
+    if (estimatedHours > 0) {
+        const hoursWithCurrentCrew = estimatedHours / movers;
+        if (hoursWithCurrentCrew > 5 && movers < 5) {
+            movers++; // Add one more mover to stay under 5 hours
+        }
+    }
 
     return movers;
 }
@@ -88,10 +99,18 @@ function calculateMove() {
     // Round to nearest 0.5 hour
     hours = Math.round(hours * 2) / 2;
 
+    // Calculate total person-hours first (before applying minimum)
+    const rawPersonHours = hours;
+
+    // Get recommended movers (optimized for 4-5 hour jobs)
+    const movers = recommendMovers(residenceType, stairs, specialtyItems, hours);
+
+    // Calculate actual hours with crew size
+    hours = rawPersonHours; // Use base calculation
+
     // Apply 2-hour minimum
     hours = Math.max(hours, 2);
 
-    const movers = recommendMovers(residenceType, stairs, specialtyItems);
     const totalPersonHours = hours * movers;
 
     // Display results
