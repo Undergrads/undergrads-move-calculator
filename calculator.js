@@ -129,6 +129,12 @@ function displayResults(hours, movers, totalPersonHours, inputs) {
     document.getElementById('recommendedMovers').textContent = `${movers} movers`;
     document.getElementById('totalPersonHours').textContent = `${totalPersonHours} person-hours`;
 
+    // Create calculation breakdown
+    createCalculationBreakdown(inputs, hours);
+
+    // Create time range visual
+    createTimeRangeVisual(hours);
+
     // Build factors list
     const factors = [];
 
@@ -188,4 +194,128 @@ function resetCalculator() {
     document.getElementById('moveCalculator').reset();
     document.getElementById('results').classList.add('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function createCalculationBreakdown(inputs, finalHours) {
+    const steps = [];
+
+    // Step 1: Base hours
+    const baseHours = getBaseHours(inputs.residenceType);
+    const residenceLabels = {
+        'studio': 'Studio apartment',
+        '1bedroom': '1 bedroom',
+        '2bedroom': '2 bedroom',
+        '3bedroom': '3 bedroom',
+        '4bedroom': '4+ bedroom'
+    };
+    steps.push({
+        label: `Base time for ${residenceLabels[inputs.residenceType]} (loading)`,
+        value: `${baseHours} hours`,
+        explanation: 'Industry standard for labor-only loading service'
+    });
+
+    // Step 2: Move type multiplier
+    const moveTypeLabels = {
+        'load': 'Load only (1.0×)',
+        'unload': 'Unload only (0.70× - faster!)',
+        'both': 'Load & Unload (1.70×)',
+        'inhouse': 'In-house move (0.80×)'
+    };
+    const multipliers = {
+        'load': 1.0,
+        'unload': 0.70,
+        'both': 1.70,
+        'inhouse': 0.80
+    };
+    const afterMultiplier = baseHours * multipliers[inputs.moveType];
+    steps.push({
+        label: `Service type: ${moveTypeLabels[inputs.moveType]}`,
+        value: `${afterMultiplier.toFixed(1)} hours`,
+        explanation: inputs.moveType === 'unload' ? 'Unloading is faster - just grab and go!' :
+                     inputs.moveType === 'both' ? 'Includes both loading and unloading time' : ''
+    });
+
+    // Step 3: Adjustments
+    let adjustmentTotal = 0;
+    const adjustmentDetails = [];
+
+    // Stairs
+    const stairsAdjustments = {
+        '1flight': 0.75,
+        '2flights': 1.5,
+        '3flights': 2.5
+    };
+    if (inputs.stairs !== 'ground' && stairsAdjustments[inputs.stairs]) {
+        const stairsTime = stairsAdjustments[inputs.stairs];
+        adjustmentTotal += stairsTime;
+        adjustmentDetails.push(`Stairs: +${stairsTime} hrs`);
+    }
+
+    // Carry distance
+    const distanceAdjustments = {
+        'moderate': 0.5,
+        'long': 1.0
+    };
+    if (inputs.carryDistance !== 'close' && distanceAdjustments[inputs.carryDistance]) {
+        const distanceTime = distanceAdjustments[inputs.carryDistance];
+        adjustmentTotal += distanceTime;
+        adjustmentDetails.push(`Parking distance: +${distanceTime} hrs`);
+    }
+
+    // Specialty items
+    if (inputs.specialtyItems.length > 0) {
+        const itemTime = inputs.specialtyItems.length >= 3 ? 1.0 : 0.5;
+        adjustmentTotal += itemTime;
+        adjustmentDetails.push(`${inputs.specialtyItems.length} specialty items: +${itemTime} hrs`);
+    }
+
+    if (adjustmentTotal > 0) {
+        steps.push({
+            label: 'Additional factors',
+            value: `+${adjustmentTotal.toFixed(1)} hours`,
+            explanation: adjustmentDetails.join(', ')
+        });
+    }
+
+    // Final step
+    steps.push({
+        label: 'Total estimated time',
+        value: `${finalHours} hours`,
+        explanation: '2-hour minimum applied',
+        isFinal: true
+    });
+
+    // Render steps
+    const stepsContainer = document.getElementById('calculationSteps');
+    stepsContainer.innerHTML = steps.map((step, index) => `
+        <div class="calc-step ${step.isFinal ? 'calc-step-final' : ''}">
+            <div class="calc-step-number">${index + 1}</div>
+            <div class="calc-step-content">
+                <div class="calc-step-label">${step.label}</div>
+                ${step.explanation ? `<div class="calc-step-explanation">${step.explanation}</div>` : ''}
+            </div>
+            <div class="calc-step-value">${step.value}</div>
+        </div>
+    `).join('');
+}
+
+function createTimeRangeVisual(estimatedHours) {
+    // Calculate range: -20% to +20%
+    const lowEstimate = Math.max(2, Math.round((estimatedHours * 0.8) * 2) / 2);
+    const highEstimate = Math.round((estimatedHours * 1.2) * 2) / 2;
+
+    // Update markers
+    document.getElementById('timeLow').style.left = '10%';
+    document.getElementById('timeEstimate').style.left = '50%';
+    document.getElementById('timeHigh').style.left = '90%';
+
+    document.getElementById('timeLabelLow').textContent = `${lowEstimate} hrs`;
+    document.getElementById('timeLabelEstimate').textContent = `${estimatedHours} hrs`;
+    document.getElementById('timeLabelHigh').textContent = `${highEstimate} hrs`;
+
+    // Animate the fill
+    const fillBar = document.getElementById('timeBarFill');
+    setTimeout(() => {
+        fillBar.style.width = '100%';
+    }, 300);
 }

@@ -122,8 +122,71 @@
             </div>
 
             <div class="estimate-details">
-                <h3>Based on:</h3>
+                <h3>Your Move Summary:</h3>
                 <ul id="estimateFactors"></ul>
+            </div>
+
+            <!-- NEW: Calculation Breakdown -->
+            <div class="calculation-breakdown">
+                <h3>📊 How We Calculated This</h3>
+                <p class="breakdown-intro">Based on thousands of moves and industry experience, here's your personalized estimate:</p>
+
+                <div class="calculation-steps" id="calculationSteps">
+                    <!-- Steps will be inserted here by JavaScript -->
+                </div>
+
+                <div class="time-range-visual">
+                    <h4>⏱️ Expected Time Range</h4>
+                    <p class="range-description">Real moves have natural variability. Your move will likely fall in this range:</p>
+                    <div class="time-bar-container">
+                        <div class="time-bar">
+                            <div class="time-bar-fill" id="timeBarFill"></div>
+                            <div class="time-marker time-marker-low" id="timeLow"></div>
+                            <div class="time-marker time-marker-estimate" id="timeEstimate"></div>
+                            <div class="time-marker time-marker-high" id="timeHigh"></div>
+                        </div>
+                        <div class="time-labels">
+                            <span class="time-label-low" id="timeLabelLow">Best Case</span>
+                            <span class="time-label-estimate" id="timeLabelEstimate">Our Estimate</span>
+                            <span class="time-label-high" id="timeLabelHigh">With Delays</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="factors-grid">
+                    <div class="factor-card factor-faster">
+                        <h4>✅ Faster If:</h4>
+                        <ul>
+                            <li>Everything is pre-packed and labeled</li>
+                            <li>Clear pathways and close parking</li>
+                            <li>Furniture already disassembled</li>
+                            <li>Someone on-site to direct movers</li>
+                            <li>Good weather conditions</li>
+                        </ul>
+                    </div>
+                    <div class="factor-card factor-slower">
+                        <h4>⚠️ Slower If:</h4>
+                        <ul>
+                            <li>Still packing when movers arrive</li>
+                            <li>Narrow doorways or tight corners</li>
+                            <li>Elevator wait times or building restrictions</li>
+                            <li>Unexpected heavy items not mentioned</li>
+                            <li>Rain or snow conditions</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="why-trust">
+                    <h4>💡 Why Trust This Estimate?</h4>
+                    <p>Our calculations are based on:</p>
+                    <ul>
+                        <li><strong>Industry research</strong> from U-Haul, HireAHelper, and major moving companies</li>
+                        <li><strong>Labor-only service standards</strong> specific to load/unload operations</li>
+                        <li><strong>Real-world data</strong> showing unloading is 25-30% faster than loading</li>
+                        <li><strong>Conservative estimates</strong> - we'd rather finish early than run over!</li>
+                    </ul>
+                </div>
+
                 <p class="disclaimer">
                     <strong>Note:</strong> This is a conservative estimate. We typically send 4 movers for speed and reliability - your job may finish faster! Actual time may vary by ±15-20% depending on specific conditions. Contact us for a precise quote!
                 </p>
