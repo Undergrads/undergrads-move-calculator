@@ -6,14 +6,15 @@ document.getElementById('moveCalculator').addEventListener('submit', function(e)
 });
 
 function getBaseHours(residenceType) {
+    // Base hours for LOAD ONLY (from industry research)
     const baseHours = {
-        'studio': 2.5,
-        '1bedroom': 3,
-        '2bedroom': 4.5,
-        '3bedroom': 6.5,
-        '4bedroom': 10
+        'studio': 1.5,      // Load only: 1.5-2 hours
+        '1bedroom': 2,      // Load only: 2 hours
+        '2bedroom': 3,      // Load only: 3 hours
+        '3bedroom': 4,      // Load only: 4 hours
+        '4bedroom': 6       // Load only: 5-6 hours
     };
-    return baseHours[residenceType] || 3;
+    return baseHours[residenceType] || 2;
 }
 
 function applyMoveTypeMultiplier(baseHours, moveType) {
