@@ -20,8 +20,9 @@ function getBaseHours(residenceType) {
 function applyMoveTypeMultiplier(baseHours, moveType) {
     // Labor-only multipliers (base = loading time)
     const multipliers = {
-        'load': 1.0,        // Loading = baseline (tetris packing)
-        'unload': 0.70,     // Unloading is 30% faster (grab & go)
+        'load': 1.0,        // Loading only = baseline (tetris packing)
+        'unload': 0.70,     // Unloading only is 30% faster (grab & go)
+        'both': 1.70,       // Load + Unload (1.0 + 0.70 = both locations)
         'inhouse': 0.80     // In-house moves (similar to unload)
     };
     return baseHours * (multipliers[moveType] || 1.0);
@@ -126,6 +127,7 @@ function displayResults(hours, movers, totalPersonHours, inputs) {
     const moveTypeLabels = {
         'load': 'Load only (pack truck)',
         'unload': 'Unload only (unpack truck)',
+        'both': 'Load & Unload (customer drives truck)',
         'inhouse': 'In-house move'
     };
     factors.push(moveTypeLabels[inputs.moveType]);
