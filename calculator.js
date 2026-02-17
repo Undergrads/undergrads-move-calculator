@@ -13,11 +13,17 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeInventory();
 });
 
-function toggleAdvancedMode() {
+// Make sure this function is globally accessible
+window.toggleAdvancedMode = function() {
     advancedMode = !advancedMode;
     const advancedFields = document.getElementById('advancedFields');
     const toggleButton = document.getElementById('modeToggle');
     const modeText = toggleButton.querySelector('.mode-text');
+
+    if (!advancedFields || !toggleButton || !modeText) {
+        console.error('Required elements not found');
+        return;
+    }
 
     if (advancedMode) {
         advancedFields.classList.remove('hidden');
@@ -32,7 +38,7 @@ function toggleAdvancedMode() {
         modeText.textContent = 'Switch to Advanced Estimate';
         toggleButton.classList.remove('active');
     }
-}
+};
 
 function getBaseHours(residenceType) {
     // Base hours for LOAD ONLY (from industry research)
@@ -495,7 +501,7 @@ function initializeInventory() {
     });
 }
 
-function toggleRoom(roomId) {
+window.toggleRoom = function(roomId) {
     const content = document.getElementById(`content-${roomId}`);
     const icon = content.previousElementSibling.querySelector('.accordion-icon');
 
@@ -508,25 +514,25 @@ function toggleRoom(roomId) {
     }
 }
 
-function expandAllRooms() {
+window.expandAllRooms = function() {
     document.querySelectorAll('.accordion-content').forEach(content => {
         content.classList.add('open');
     });
     document.querySelectorAll('.accordion-icon').forEach(icon => {
         icon.textContent = '▼';
     });
-}
+};
 
-function collapseAllRooms() {
+window.collapseAllRooms = function() {
     document.querySelectorAll('.accordion-content').forEach(content => {
         content.classList.remove('open');
     });
     document.querySelectorAll('.accordion-icon').forEach(icon => {
         icon.textContent = '▶';
     });
-}
+};
 
-function updateQuantity(itemId, change) {
+window.updateQuantity = function(itemId, change) {
     const input = document.getElementById(`qty-${itemId}`);
     const currentValue = parseInt(input.value) || 0;
     const newValue = Math.max(0, Math.min(99, currentValue + change));
@@ -538,7 +544,7 @@ function updateQuantity(itemId, change) {
     updateRoomCounts();
 }
 
-function setQuantity(itemId, value) {
+window.setQuantity = function(itemId, value) {
     const quantity = Math.max(0, Math.min(99, parseInt(value) || 0));
     const input = document.getElementById(`qty-${itemId}`);
 
