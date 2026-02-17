@@ -127,29 +127,26 @@ function calculateMove() {
     // Get advanced mode values if enabled
     const advancedData = advancedMode ? getAdvancedInputs() : null;
 
-    // Calculate
-    let hours = getBaseHours(residenceType);
-    hours = applyMoveTypeMultiplier(hours, moveType);
+    let hours;
+    let movers;
 
-    const adjustments = calculateAdjustments(stairs, carryDistance, specialtyItems);
-    hours += adjustments;
-
-    // Apply advanced mode adjustments
-    if (advancedMode && advancedData) {
-        hours += calculateAdvancedAdjustments(advancedData);
+    // ADVANCED MODE: Calculate from cubic feet (industry formula)
+    if (advancedMode && advancedData && advancedData.totalVolume > 0) {
+        const result = calculateFromCubicFeet(advancedData, moveType, stairs, carryDistance);
+        hours = result.hours;
+        movers = result.movers;
+    }
+    // SIMPLE MODE: Use residence-based estimates
+    else {
+        hours = getBaseHours(residenceType);
+        hours = applyMoveTypeMultiplier(hours, moveType);
+        const adjustments = calculateAdjustments(stairs, carryDistance, specialtyItems);
+        hours += adjustments;
+        movers = recommendMovers(residenceType, stairs, specialtyItems, hours);
     }
 
     // Round to nearest 0.5 hour
     hours = Math.round(hours * 2) / 2;
-
-    // Calculate total person-hours first (before applying minimum)
-    const rawPersonHours = hours;
-
-    // Get recommended movers (optimized for 4-5 hour jobs)
-    const movers = recommendMovers(residenceType, stairs, specialtyItems, hours);
-
-    // Calculate actual hours with crew size
-    hours = rawPersonHours; // Use base calculation
 
     // Apply 2-hour minimum
     hours = Math.max(hours, 2);
@@ -186,55 +183,108 @@ function getAdvancedInputs() {
     };
 }
 
-function calculateAdvancedAdjustments(data) {
-    let adjustment = 0;
+// INDUSTRY-STANDARD CUBIC FEET CALCULATION
+function calculateFromCubicFeet(data, moveType, stairs, carryDistance) {
+    const cubicFeet = data.totalVolume;
 
-    // Comprehensive inventory volume adjustment
-    // Industry standard: ~100 cubic feet = 1 hour of labor
-    if (data.totalVolume > 0) {
-        const volumeHours = data.totalVolume / 100;
-        adjustment += volumeHours * 0.5; // More precise than base estimate
+    // Determine crew size based on volume
+    let movers = 2;
+    if (cubicFeet >= 600 && cubicFeet < 1200) movers = 3;
+    else if (cubicFeet >= 1200) movers = 4;
+
+    // Base productivity rate (cubic feet per hour per mover)
+    // Industry standard: 2 movers = 42.5 cu ft/hr per person, 3 movers = 53 cu ft/hr per person
+    let baseRatePerMover;
+    if (movers === 2) baseRatePerMover = 42.5;
+    else if (movers === 3) baseRatePerMover = 53;
+    else baseRatePerMover = 50; // 4+ movers have diminishing returns
+
+    // Calculate base time for loading
+    let loadingHours = cubicFeet / (baseRatePerMover * movers);
+
+    // Apply multiplier factors
+    const multipliers = calculateMultipliers(data, stairs, carryDistance);
+    loadingHours *= multipliers.combined;
+
+    // Calculate unloading hours (20% faster)
+    const unloadingHours = loadingHours * 0.80;
+
+    // Apply move type
+    let totalHours;
+    if (moveType === 'load') {
+        totalHours = loadingHours;
+    } else if (moveType === 'unload') {
+        totalHours = unloadingHours;
+    } else if (moveType === 'both') {
+        totalHours = loadingHours + unloadingHours;
+    } else if (moveType === 'inhouse') {
+        totalHours = unloadingHours; // Similar to unload
     }
 
-    // Box count adjustment (every 10 boxes adds ~15 min)
-    if (data.boxCount > 0) {
-        adjustment += (data.boxCount / 10) * 0.25;
+    return { hours: totalHours, movers: movers };
+}
+
+function calculateMultipliers(data, stairs, carryDistance) {
+    let stairsMultiplier = 1.0;
+    let carryMultiplier = 1.0;
+    let packingMultiplier = 1.0;
+    let complexityMultiplier = 1.0;
+
+    // STAIRS MULTIPLIER
+    // Ground floor = 1.0, 2-3 flights = 1.3, 4+ flights = 1.6
+    if (data.floorNumber && data.floorNumber > 1) {
+        if (data.floorNumber >= 4) stairsMultiplier = 1.6;
+        else if (data.floorNumber >= 2) stairsMultiplier = 1.3;
+    } else if (stairs === '1flight') {
+        stairsMultiplier = 1.2;
+    } else if (stairs === '2flights') {
+        stairsMultiplier = 1.3;
+    } else if (stairs === '3flights') {
+        stairsMultiplier = 1.6;
     }
 
-    // Item count adjustment (many small items take longer)
-    if (data.totalItems > 50) {
-        adjustment += 0.5; // Many items to wrap/move
-    }
-    if (data.totalItems > 100) {
-        adjustment += 0.5; // Very many items
-    }
+    // Elevator adjustments
+    if (data.elevatorStatus === 'slow') stairsMultiplier *= 1.1;
+    else if (data.elevatorStatus === 'passenger') stairsMultiplier *= 1.0;
+    else if (data.elevatorStatus === 'reliable') stairsMultiplier *= 0.9; // Freight elevator is faster
+    else if (data.elevatorStatus === 'none') stairsMultiplier = Math.max(stairsMultiplier, 1.5);
 
-    // Packing status (not ready = longer time)
-    if (data.packingStatus < 100) {
-        const unpacked = 100 - data.packingStatus;
-        adjustment += (unpacked / 100) * 1.5; // Up to 1.5 hours if nothing packed
-    }
-
-    // Specific floor number (more precise than flights)
-    if (data.floorNumber > 0) {
-        // Each floor adds ~20 minutes on average
-        adjustment += (data.floorNumber - 1) * 0.33;
+    // CARRY DISTANCE MULTIPLIER
+    // <75 ft = 1.0, 75-150 ft = 1.15, 150-250 ft = 1.3, >250 ft = 1.5
+    if (carryDistance === 'moderate') {
+        carryMultiplier = 1.15;
+    } else if (carryDistance === 'long') {
+        carryMultiplier = 1.3;
     }
 
-    // Elevator reliability
-    if (data.elevatorStatus === 'slow') adjustment += 0.5;
-    if (data.elevatorStatus === 'passenger') adjustment += 0.25;
-    if (data.elevatorStatus === 'none') adjustment += 1.0;
+    // PACKING MULTIPLIER
+    // Pre-packed = 1.0, Standard packing = 1.2, Not packed = 1.5
+    if (data.packingStatus !== undefined) {
+        if (data.packingStatus < 50) packingMultiplier = 1.5;
+        else if (data.packingStatus < 75) packingMultiplier = 1.3;
+        else if (data.packingStatus < 100) packingMultiplier = 1.15;
+    }
 
-    // Access challenges (each adds time)
-    adjustment += data.accessChallenges.length * 0.25;
+    // COMPLEXITY MULTIPLIER
+    // Disassembly, access challenges, fragile items
+    if (data.disassembly === 'extensive') complexityMultiplier *= 1.3;
+    else if (data.disassembly === 'moderate') complexityMultiplier *= 1.2;
+    else if (data.disassembly === 'minimal') complexityMultiplier *= 1.1;
 
-    // Disassembly
-    if (data.disassembly === 'minimal') adjustment += 0.5;
-    if (data.disassembly === 'moderate') adjustment += 1.0;
-    if (data.disassembly === 'extensive') adjustment += 1.5;
+    if (data.accessChallenges && data.accessChallenges.length > 0) {
+        complexityMultiplier *= (1 + data.accessChallenges.length * 0.08); // Each challenge adds 8%
+    }
 
-    return adjustment;
+    // COMBINED MULTIPLIER
+    const combined = stairsMultiplier * carryMultiplier * packingMultiplier * complexityMultiplier;
+
+    return {
+        stairs: stairsMultiplier,
+        carry: carryMultiplier,
+        packing: packingMultiplier,
+        complexity: complexityMultiplier,
+        combined: combined
+    };
 }
 
 function displayResults(hours, movers, totalPersonHours, inputs) {
@@ -313,20 +363,66 @@ function resetCalculator() {
 function createCalculationBreakdown(inputs, finalHours) {
     const steps = [];
 
-    // Step 1: Base hours
-    const baseHours = getBaseHours(inputs.residenceType);
-    const residenceLabels = {
-        'studio': 'Studio apartment',
-        '1bedroom': '1 bedroom',
-        '2bedroom': '2 bedroom',
-        '3bedroom': '3 bedroom',
-        '4bedroom': '4+ bedroom'
-    };
-    steps.push({
-        label: `Base time for ${residenceLabels[inputs.residenceType]} (loading)`,
-        value: `${baseHours} hours`,
-        explanation: 'Industry standard for labor-only loading service'
-    });
+    // ADVANCED MODE: Show cubic feet calculation
+    if (inputs.advancedMode && inputs.advancedData && inputs.advancedData.totalVolume > 0) {
+        const data = inputs.advancedData;
+        const multipliers = calculateMultipliers(data, inputs.stairs, inputs.carryDistance);
+
+        steps.push({
+            label: `📦 Total inventory volume`,
+            value: `${data.totalVolume} cu ft`,
+            explanation: `${data.totalItems} items selected from comprehensive inventory`
+        });
+
+        // Determine movers
+        let movers = 2;
+        if (data.totalVolume >= 600 && data.totalVolume < 1200) movers = 3;
+        else if (data.totalVolume >= 1200) movers = 4;
+
+        let baseRate = movers === 2 ? 42.5 : movers === 3 ? 53 : 50;
+        steps.push({
+            label: `⚡ Crew efficiency rate`,
+            value: `${baseRate} cu ft/hr per mover`,
+            explanation: `${movers} movers recommended for this volume`
+        });
+
+        // Show multipliers if significant
+        if (multipliers.combined > 1.05) {
+            const factors = [];
+            if (multipliers.stairs > 1.0) factors.push(`stairs (${multipliers.stairs.toFixed(2)}x)`);
+            if (multipliers.carry > 1.0) factors.push(`carry distance (${multipliers.carry.toFixed(2)}x)`);
+            if (multipliers.packing > 1.0) factors.push(`packing (${multipliers.packing.toFixed(2)}x)`);
+            if (multipliers.complexity > 1.0) factors.push(`complexity (${multipliers.complexity.toFixed(2)}x)`);
+
+            steps.push({
+                label: `📐 Adjustment factors`,
+                value: `${multipliers.combined.toFixed(2)}x slower`,
+                explanation: factors.join(', ')
+            });
+        }
+
+        steps.push({
+            label: `🔢 Industry formula calculation`,
+            value: `${finalHours} hours`,
+            explanation: `Cubic feet ÷ (rate × movers) × adjustments`
+        });
+
+    }
+    // SIMPLE MODE: Show residence-based calculation
+    else {
+        const baseHours = getBaseHours(inputs.residenceType);
+        const residenceLabels = {
+            'studio': 'Studio apartment',
+            '1bedroom': '1 bedroom',
+            '2bedroom': '2 bedroom',
+            '3bedroom': '3 bedroom',
+            '4bedroom': '4+ bedroom'
+        };
+        steps.push({
+            label: `Base time for ${residenceLabels[inputs.residenceType]} (loading)`,
+            value: `${baseHours} hours`,
+            explanation: 'Industry standard for labor-only loading service'
+        });
 
     // Step 2: Move type multiplier
     const moveTypeLabels = {
@@ -391,31 +487,17 @@ function createCalculationBreakdown(inputs, finalHours) {
         });
     }
 
-    // Advanced mode adjustments
-    if (inputs.advancedMode && inputs.advancedData) {
-        const advAdj = calculateAdvancedAdjustments(inputs.advancedData);
-        if (advAdj > 0) {
-            const advDetails = [];
-            if (inputs.advancedData.boxCount > 0) advDetails.push(`${inputs.advancedData.boxCount} boxes`);
-            if (inputs.advancedData.furniture.length > 0) advDetails.push(`${inputs.advancedData.furniture.length} furniture items`);
-            if (inputs.advancedData.packingStatus < 100) advDetails.push(`${inputs.advancedData.packingStatus}% packed`);
-            if (inputs.advancedData.disassembly && inputs.advancedData.disassembly !== 'none') advDetails.push('disassembly needed');
-
-            steps.push({
-                label: '🎯 Advanced details refinement',
-                value: `+${advAdj.toFixed(1)} hours`,
-                explanation: advDetails.join(', ')
-            });
-        }
     }
 
-    // Final step
-    steps.push({
-        label: 'Total estimated time',
-        value: `${finalHours} hours`,
-        explanation: '2-hour minimum applied',
-        isFinal: true
-    });
+    // Final step (only for simple mode, advanced already showed it)
+    if (!inputs.advancedMode || !inputs.advancedData || inputs.advancedData.totalVolume === 0) {
+        steps.push({
+            label: 'Total estimated time',
+            value: `${finalHours} hours`,
+            explanation: '2-hour minimum applied',
+            isFinal: true
+        });
+    }
 
     // Render steps
     const stepsContainer = document.getElementById('calculationSteps');
