@@ -434,7 +434,7 @@ function createCalculationBreakdown(inputs, finalHours) {
 function createTimeRangeVisual(estimatedHours) {
     // Calculate range: -20% to +20%
     const lowEstimate = Math.max(2, Math.round((estimatedHours * 0.8) * 2) / 2);
-    const highEstimate = Math.round((estimatedHours * 1.2) * 2) / 2);
+    const highEstimate = Math.round((estimatedHours * 1.2) * 2) / 2;
 
     // Update markers
     document.getElementById('timeLow').style.left = '10%';
